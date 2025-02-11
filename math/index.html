@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>Math Model</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+  </head>
+
+  <body>
+    <!-- Input field -->
+    <label for="userInput">Enter Input:</label>
+    <input type="text" id="userInput">
+    
+    <!-- Run model button -->
+    <button id="runModel" onclick="runModel()">Go</button>
+
+    <!-- Output display -->
+    <h2>Answer:</h2>
+    <pre id="result"></pre>
+    <pre id="output"></pre>
+
+    <script>
+        document.getElementById("userInput").addEventListener("keydown", function(event) {
+            if (event.key === "Enter") { // Check if Enter key is pressed
+                document.getElementById("runModel").click(); // Trigger button click
+            }
+        });
+        async function runModel() {
+            try {
+                // Load ONNX model
+                const session = await ort.InferenceSession.create("model.onnx");
+                const TOKENS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', ' ', '-', '+', '*', '<PAD>', '<BOS>', '<END>']
+
+                // Get user input and process it
+                let inputText = document.getElementById("userInput").value;
+
+                let contextValues = inputText.split("").map(char => TOKENS.indexOf(char))
+                while (contextValues.length < 9) {
+                    contextValues.push(TOKENS.indexOf('<PAD>'))
+                }
+                console.log(contextValues)
+                let primaryValues = [15, 0, 0, 0, 0, 0, 0]
+
+                // Create ONNX tensor (adjust dimensions based on your model)
+                let contextTensor = new ort.Tensor("int64", contextValues, [1, 9]);
+                let primaryTensor = new ort.Tensor("int64", primaryValues, [1, 7]);
+
+                // Prepare model input
+                const feeds = { context: contextTensor, primary: primaryTensor }; // Update 'input' with your actual model input name
+
+                // Run inference
+                const results = await session.run(feeds);
+
+                // Get the first output (adjust if your model has multiple outputs)
+                let output = results[Object.keys(results)[0]].data;
+                console.log(output.length)
+
+                let result = ""
+                const numTokens = TOKENS.length
+
+                for (let i = 0; i < 7; i++) {
+                    let outputSlice = output.slice(i * numTokens, (i + 1) * numTokens)
+                    console.log(outputSlice)
+                    const argmax = outputSlice.indexOf(Math.max(...outputSlice));
+                    console.log(argmax)
+
+                    result += TOKENS[argmax]
+                    document.getElementById("result").textContent = result
+                }
+
+          } catch (error) {
+              console.error("Error running ONNX model:", error);
+              document.getElementById("output").textContent = "Error: " + error.message;
+          }
+      }
+  </script>
+  </body>
+</html>

@@ -4,64 +4,11 @@
   <head>
     <link rel="icon" href="blub.ico">
     <title>Howdy</title>
-
-    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
   </head>
 
   <body>
     <h1>Welcome!</h1>
     <p>stay as long as you like though there is not much to see here</p>
     <a href="resume.pdf">resume</a>
-    
-    <!-- Input field -->
-    <label for="userInput">Enter Input:</label>
-    <input type="text" id="userInput">
-    
-    <!-- Run model button -->
-    <button onclick="runModel()">Go</button>
-
-    <!-- Output display -->
-    <h2>Answer:</h2>
-    <pre id="output"></pre>
-
-    <script>
-      async function runModel() {
-          try {
-              // Load ONNX model
-              const session = await ort.InferenceSession.create("model.onnx");
-
-              // Get user input and process it
-              let inputText = document.getElementById("userInput").value;
-              let inputNumber = parseFloat(inputText) || 0; // Convert to number (example for numerical models)
-
-              // Test input: 12 + 34
-              // [0, 1, 10, 12, 10, 2, 3, 14, 14]
-              // Test primary: <BOS> ...
-              // [15, 0, 0, 0, 0, 0, 0]
-              let contextValues = [0, 1, 10, 12, 10, 2, 3, 14, 14]
-              let primaryValues = [15, 0, 0, 0, 0, 0, 0]
-
-              // Create ONNX tensor (adjust dimensions based on your model)
-              let contextTensor = new ort.Tensor("int64", contextValues, [1, 9]);
-              let primaryTensor = new ort.Tensor("int64", primaryValues, [1, 7]);
-
-              // Prepare model input
-              const feeds = { context: contextTensor, primary: primaryTensor }; // Update 'input' with your actual model input name
-
-              // Run inference
-              const results = await session.run(feeds);
-
-              // Get the first output (adjust if your model has multiple outputs)
-              let output = results[Object.keys(results)[0]].data;
-              // output = new ort.Tensor("float32", output, [1, 7, 17])
-
-              // Display result
-              document.getElementById("output").textContent = "Prediction: " + output.slice(0, 17);
-          } catch (error) {
-              console.error("Error running ONNX model:", error);
-              document.getElementById("output").textContent = "Error: " + error.message;
-          }
-      }
-  </script>
   </body>
 </html>
